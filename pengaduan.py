@@ -2,14 +2,16 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from datetime import datetime
 from tkinter import messagebox, simpledialog
+from ttkbootstrap.tableview import Tableview
 from ttkbootstrap.constants import *
-from ttkbootstrap import Style
+# from ttkbootstrap import Style
 import mysql.connector
 
 class PengaduanApp:
     def __init__(self, root, db):
         self.root = root
         self.db = db
+        self.colors = colors
         self.root.title("Aplikasi Pengaduan")
         self.cursor = self.db.cursor()
 
@@ -57,36 +59,53 @@ class PengaduanApp:
         info_label.pack(padx=20, pady=20)
 
     def tampilkan_pengaduan(self):
+        # tampilkan_window = tk.Tk()
         tampilkan_window = tk.Toplevel(self.root)
         tampilkan_window.title("Tampilkan Pengaduan")
 
-        self.tree = ttk.Treeview(tampilkan_window, columns=('id', 'judul_laporan', 'tgl_kejadian', 'lokasi_kejadian', 'instansi_tujuan', 'isi_laporan'))
-        self.tree.heading('#0', text='Laporan ke-')
-        self.tree.heading('#1', text='Judul Laporan')
-        self.tree.heading('#2', text='Isi Laporan')
-        self.tree.heading('#3', text='Tanggal Kejadian')
-        self.tree.heading('#4', text='Lokasi Kejadian')
-        self.tree.heading('#5', text='Instansi Tujuan')
-        self.tree.pack(fill=ttk.BOTH, expand=True)
-        
-        # self.tree.column('#0', width=50, sticky=W)
-        # self.tree.column('#1', width=100, sticky=W)
-        # self.tree.column('#2', width=100, sticky=W)
-        # self.tree.column('#3', width=200, sticky=W)
-        # self.tree.column('#4', width=100, sticky=W)
-        # self.tree.column('#5', width=200, sticky=W)
+        # self.tree = ttk.Treeview(tampilkan_window, bootstyle="warning.Treeview")
+        columns=('id', 'judul_laporan', 'tgl_kejadian', 'lokasi_kejadian', 'instansi_tujuan', 'isi_laporan')
+        coldata = [
+            {"text": "Laporan ke-", "stretch":False},
+            {"text": "Judul Laporan", "stretch":False},
+            {"text": "Isi Laporan", "stretch":False},
+            {"text": "Tanggal Kejadian", "stretch":False},
+            {"text": "Lokasi Kejadian", "stretch":False},
+            {"text": "Instansi Tujuan", "stretch":False},
+        ]
+
+        # self.tree.heading('#0', text='Laporan ke-')
+        # self.tree.heading('#1', text='Judul Laporan')
+        # self.tree.heading('#2', text='Isi Laporan')
+        # self.tree.heading('#3', text='Tanggal Kejadian')
+        # self.tree.heading('#4', text='Lokasi Kejadian')
+        # self.tree.heading('#5', text='Instansi Tujuan')
 
         self.cursor.execute("SELECT * FROM pengaduan")
         rows = self.cursor.fetchall()
 
+        
+        table = Tableview(
+            master=tampilkan_window,
+            coldata=coldata,
+            rowdata=rows,
+            paginated=True,
+            autofit=False,
+            searchable=True,
+            bootstyle=PRIMARY,
+            stripecolor=(colors.dark, 'green', NONE),
+        )
+
+        table.pack(fill=ttk.BOTH, expand=YES, padx=10, pady=10)
+            
         for row in rows:
-            self.tree.insert('', 'end', values=row)
+            table.insert_row('end')
+            table.load_table_data()
+            roows=table.tablerows
+            # print(row[1].values)
 
         if not rows:
             messagebox.showinfo("Info", "Belum ada pengaduan.")
-
-        # self.tree.pack(pady=20, padx=20)
-            
 
     def keluar(self):
         confirm = messagebox.askyesno("Konfirmasi", "Apakah Anda yakin ingin keluar?")
@@ -106,6 +125,7 @@ if __name__ == "__main__":
     root.iconbitmap(default='images/uty.ico')
     root.geometry('500x350')
 
+    colors = root.style.colors
     app = PengaduanApp(root, db)
     root.mainloop()
 
