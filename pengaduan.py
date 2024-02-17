@@ -4,18 +4,22 @@ from datetime import datetime
 from tkinter import messagebox, simpledialog
 from ttkbootstrap.tableview import Tableview
 from ttkbootstrap.constants import *
+from tkinter import Label, Entry, Button, Toplevel
+import tkinter as tk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 # from ttkbootstrap import Style
 import mysql.connector
 
 class PengaduanApp:
-    def __init__(self, root, db):
-        self.root = root
+    def __init__(self, master, db):
+        self.master = master
         self.db = db
         self.colors = colors
-        self.root.title("Aplikasi Pengaduan")
+        self.master.title("Aplikasi Pengaduan")
         self.cursor = self.db.cursor()
 
-        mainFrame = ttk.Frame(root, padding=15)
+        mainFrame = ttk.Frame(master, padding=15)
         mainFrame.pack(fill=tk.BOTH, expand=True)
 
         label_judul = ttk.Label(mainFrame, text="Pengaduan Rakyat", font=("Helvetica", 20, "bold"))
@@ -33,15 +37,86 @@ class PengaduanApp:
         btn_keluar.pack(pady=5)
 
     def ajukan_pengaduan(self):
-        judul_laporanB = simpledialog.askstring("Ajukan Pengaduan", "Masukkan Judul Pengaduan :")
-        tgl_kejadian = datetime.now()
-        lok_kejadianB = simpledialog.askstring("Ajukan Pengaduan", "Masukkan Lokasi Kejadian :")
-        instansiB = simpledialog.askstring("Ajukan Pengaduan", "Masukkan Instansi Tujuan : ")
-        isi_laporanB = simpledialog.askstring("Ajukan Pengaduan", "Masukkan Isi Laporan : ")
-        
-        if judul_laporanB and lok_kejadianB and instansiB and isi_laporanB:
-            self.simpan_pengaduan(judul_laporanB, tgl_kejadian, lok_kejadianB, instansiB, isi_laporanB)
-            self.tampilkan_info_pengaduan(judul_laporanB, tgl_kejadian, lok_kejadianB, instansiB, isi_laporanB)
+        class DataEntryForm(ttk.Frame):
+
+            def __init__(self, master):
+                super().__init__(master, padding=(20, 10))
+                self.pack(fill=BOTH, expand=YES)
+
+                # form variables
+                self.judul_laporanB = ttk.StringVar(value="")
+                self.tgl_kejadian = ttk.StringVar(value="")
+                self.lok_kejadianB = ttk.StringVar(value="")
+                self.instansiB = ttk.StringVar(value="")
+                self.isi_laporanB = ttk.StringVar(value="")
+
+                # form header
+                hdr_txt = "Masukkan Aduan Anda" 
+                hdr = ttk.Label(master=self, text=hdr_txt, width=50)
+                hdr.pack(fill=X, pady=10)
+
+                # form entries
+                self.create_form_entry("Judul Laporan", self.judul_laporanB)
+                self.create_form_entry("Tanggal Kejadian", self.tgl_kejadian)
+                self.create_form_entry("Lokasi Kejadian", self.lok_kejadianB)
+                self.create_form_entry("Instansi Tujuan", self.instansiB)
+                self.create_form_entry("Isi Laporan", self.isi_laporanB)
+                self.create_buttonbox()
+
+            def create_form_entry(self, label, variable):
+                """Create a single form entry"""
+                container = ttk.Frame(self)
+                container.pack(fill=X, expand=YES, pady=5)
+
+                lbl = ttk.Label(master=container, text=label.title(), width=10)
+                lbl.pack(side=LEFT, padx=5)
+
+                ent = ttk.Entry(master=container, textvariable=variable)
+                ent.pack(side=LEFT, padx=5, fill=X, expand=YES)
+
+            def create_buttonbox(self):
+                """Create the application buttonbox"""
+                container = ttk.Frame(self)
+                container.pack(fill=X, expand=YES, pady=(15, 10))
+
+                sub_btn = ttk.Button(
+                    master=container,
+                    text="Submit",
+                    command=self.on_submit,
+                    bootstyle=SUCCESS,
+                    width=6,
+                )
+                sub_btn.pack(side=RIGHT, padx=5)
+                sub_btn.focus_set()
+
+                cnl_btn = ttk.Button(
+                    master=container,
+                    text="Cancel",
+                    command=self.on_cancel,
+                    bootstyle=DANGER,
+                    width=6,
+                )
+                cnl_btn.pack(side=RIGHT, padx=5)
+
+            def on_submit(self):
+                """Print the contents to console and return the values."""
+                print("Judul Laporan:", self.judul_laporanB.get())
+                print("Tanggal Kejadian:", self.tgl_kejadian.get())
+                print("Lokasi Kejadian:", self.lok_kejadianB.get())
+                print("Instansi Tujuan:", self.instansiB.get())
+                print("Isi Laporan:", self.isi_laporanB.get())
+                return self.judul_laporanB.get(), self.tgl_kejadian.get(), self.lok_kejadianB.get(), self.instansiB.get(), self.isi_laporanB.get()
+
+            def on_cancel(self):
+                """Cancel and close the application."""
+                self.master.destroy()
+
+
+        if __name__ == "__main__":
+
+            app = ttk.Window("Data Entry", "cyborg", resizable=(False, False))
+            DataEntryForm(app)
+            app.mainloop()
 
     def simpan_pengaduan(self, judul_laporanB, tgl_kejadian, lok_kejadianB, instansiB, isi_laporanB):
         cursor = self.db.cursor()
@@ -50,7 +125,7 @@ class PengaduanApp:
         self.db.commit()
 
     def tampilkan_info_pengaduan(self, judul, tanggal, lokasi, instansi, isi):
-        info_window = tk.Toplevel(self.root)
+        info_window = tk.Toplevel(self.master)
         info_window.title("Info Pengaduan")
 
         info_text = f"Judul: {judul}\nTanggal Kejadian: {tanggal}\nLokasi Kejadian: {lokasi}\nInstansi Tujuan: {instansi}\nIsi Laporan: {isi}"
@@ -60,7 +135,7 @@ class PengaduanApp:
 
     def tampilkan_pengaduan(self):
         # tampilkan_window = tk.Tk()
-        tampilkan_window = tk.Toplevel(self.root)
+        tampilkan_window = tk.Toplevel(self.master)
         tampilkan_window.title("Tampilkan Pengaduan")
 
         # self.tree = ttk.Treeview(tampilkan_window, bootstyle="warning.Treeview")
@@ -110,7 +185,7 @@ class PengaduanApp:
     def keluar(self):
         confirm = messagebox.askyesno("Konfirmasi", "Apakah Anda yakin ingin keluar?")
         if confirm:
-            self.root.destroy()
+            self.master.destroy()
 
 if __name__ == "__main__":
     db = mysql.connector.connect(
@@ -120,13 +195,13 @@ if __name__ == "__main__":
         database="db_pengaduan"
     )
 
-    root = ttk.Window(themename="cyborg")
-    root.title("Pengaduan Rakyat")
-    root.iconbitmap(default='images/uty.ico')
-    root.geometry('500x350')
+    master = ttk.Window(themename="cyborg")
+    master.title("Pengaduan Rakyat")
+    master.iconbitmap(default='images/uty.ico')
+    master.geometry('500x350')
 
-    colors = root.style.colors
-    app = PengaduanApp(root, db)
-    root.mainloop()
+    colors = master.style.colors
+    app = PengaduanApp(master, db)
+    master.mainloop()
 
     db.close()
